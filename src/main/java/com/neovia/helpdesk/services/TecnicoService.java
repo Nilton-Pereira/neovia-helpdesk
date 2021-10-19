@@ -16,19 +16,17 @@ import com.neovia.helpdesk.repositories.TecnicoRepository;
 import com.neovia.helpdesk.services.exceptions.DataIntegrityViolationException;
 import com.neovia.helpdesk.services.exceptions.ObjectnotFoundException;
 
-
 @Service
 public class TecnicoService {
-	
+
 	@Autowired
 	private TecnicoRepository repository;
-	
+
 	@Autowired
 	private PessoaRepository pessoaRepository;
-	
-	
-	public Tecnico findById (Integer id) {
-		Optional <Tecnico> obj = repository.findById(id);
+
+	public Tecnico findById(Integer id) {
+		Optional<Tecnico> obj = repository.findById(id);
 		return obj.orElseThrow(() -> new ObjectnotFoundException("Objeto Não encontrado!!! Id " + id));
 	}
 
@@ -41,35 +39,39 @@ public class TecnicoService {
 		validaPorCpfEEmail(objDTO);
 		Tecnico newObj = new Tecnico(objDTO);
 		return repository.save(newObj);
-		
-		
+
 	}
-	
-	
+
 	public Tecnico update(Integer id, @Valid TecnicoDTO objDTO) {
 		objDTO.setId(id);
 		Tecnico oldObj = findById(id);
 		validaPorCpfEEmail(objDTO);
 		return repository.save(oldObj);
-		
-		
+
 	}
-	
+
+	public void delete(Integer id) {
+		Tecnico obj = findById(id);
+		if (obj.getChamados().size() > 0) {
+			throw new DataIntegrityViolationException(
+					"Técnico Possui ordens de serviço e não pode ser deletado !!!!!1");
+		}
+
+		repository.deleteById(id);
+
+	}
+
 	private void validaPorCpfEEmail(TecnicoDTO objDTO) {
 		Optional<Pessoa> obj = pessoaRepository.findByCpf(objDTO.getCpf());
-		if(obj.isPresent() && obj.get().getId() != objDTO.getId()) {
+		if (obj.isPresent() && obj.get().getId() != objDTO.getId()) {
 			throw new DataIntegrityViolationException("CPF Cadastrado no Sistema");
 		}
-		
+
 		obj = pessoaRepository.findByEmail(objDTO.getEmail());
-		if(obj.isPresent() && obj.get().getId() != objDTO.getId()) {
+		if (obj.isPresent() && obj.get().getId() != objDTO.getId()) {
 			throw new DataIntegrityViolationException("Email Cadastrado no Sistema");
 		}
-		
-	
+
 	}
 
-	
 }
-
-
